@@ -1,12 +1,21 @@
 import { query } from '../config/db.js';
 
 export const DEFAULT_SETTINGS = {
+  brandName: 'Victory Simulator',
+  heroSubtitle: 'Elegí tu simulador, seleccioná fecha y bloque horario con disponibilidad verificada al instante y asegurá tu turno sin esperas.',
+  whatsappNumber: '5491100000000',
+  whatsappBirthdayText: 'Hola Victory Simulator! Quiero consultar para reservar un cumpleaños o evento privado.',
+  showBirthdaysSection: true,
+  showPrices: true,
+  pricingMode: 'per_zone', // 'per_zone' | 'per_player' | 'flat'
   currency: 'ARS',
   basePricePerHour: 15000,
   extraPlayerPricePerHour: 4000,
   groupDiscountThreshold: 3,
   groupDiscountPercent: 15,
   multiHourDiscountPercent: 10,
+  allowedDurations: [60, 120, 180, 240],
+  maxDaysAhead: 90,
   resetBufferMinutes: 0,
   zonePrices: {}, // { [zoneId]: number }
   schedule: {
@@ -59,13 +68,39 @@ function sanitizeSettings(raw) {
     };
   }
 
+  const pricingMode = ['per_zone', 'per_player', 'flat'].includes(merged.pricingMode)
+    ? merged.pricingMode
+    : 'per_zone';
+
+  const rawDurations = Array.isArray(merged.allowedDurations)
+    ? merged.allowedDurations
+    : String(merged.allowedDurations || '60,120,180,240')
+        .split(',')
+        .map((n) => parseInt(n.trim(), 10));
+  const allowedDurations = [...new Set(rawDurations.filter((n) => Number.isInteger(n) && n >= 30 && n <= 480))]
+    .sort((a, b) => a - b);
+
+  const maxDaysAhead = Math.min(365, Math.max(1, parseInt(merged.maxDaysAhead, 10) || 90));
+  const whatsappNumber = String(merged.whatsappNumber || DEFAULT_SETTINGS.whatsappNumber)
+    .replace(/[^\d]/g, '')
+    .slice(0, 20) || DEFAULT_SETTINGS.whatsappNumber;
+
   return {
+    brandName: String(merged.brandName || DEFAULT_SETTINGS.brandName).trim().slice(0, 60),
+    heroSubtitle: String(merged.heroSubtitle || DEFAULT_SETTINGS.heroSubtitle).trim().slice(0, 240),
+    whatsappNumber,
+    whatsappBirthdayText: String(merged.whatsappBirthdayText || DEFAULT_SETTINGS.whatsappBirthdayText).trim().slice(0, 240),
+    showBirthdaysSection: merged.showBirthdaysSection !== false,
+    showPrices: merged.showPrices !== false,
+    pricingMode,
     currency: typeof merged.currency === 'string' && merged.currency.trim() ? merged.currency.trim().slice(0, 6) : 'ARS',
     basePricePerHour,
     extraPlayerPricePerHour,
     groupDiscountThreshold,
     groupDiscountPercent,
     multiHourDiscountPercent,
+    allowedDurations: allowedDurations.length > 0 ? allowedDurations : [60, 120, 180, 240],
+    maxDaysAhead,
     resetBufferMinutes,
     zonePrices,
     schedule,
@@ -115,8 +150,15 @@ export function calculateReservationPrice(settings, { zoneId, durationMinutes, p
       : Number(settings.basePricePerHour || 0);
 
   const extraPlayers = Math.max(0, numPlayers - 1);
-  const hourlyExtras = extraPlayers * Number(settings.extraPlayerPricePerHour || 0);
-  const baseSubtotal = Math.round((hourlyBase + hourlyExtras) * hours);
+  let baseSubtotal = 0;
+  if (settings.pricingMode === 'per_player') {
+    baseSubtotal = Math.round(hourlyBase * numPlayers * hours);
+  } else if (settings.pricingMode === 'flat') {
+    baseSubtotal = Math.round(hourlyBase * hours);
+  } else {
+    const hourlyExtras = extraPlayers * Number(settings.extraPlayerPricePerHour || 0);
+    baseSubtotal = Math.round((hourlyBase + hourlyExtras) * hours);
+  }
 
   let discountPercent = 0;
   const appliedRules = [];

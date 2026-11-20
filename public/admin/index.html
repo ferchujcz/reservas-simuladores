@@ -268,17 +268,52 @@
           </div>
         </div>
       </section>
-      <!-- Configuración de Precios, Descuentos, Buffer y Horarios -->
+      <!-- Configuración Total (Super Admin: Identidad, Lógica de Cobro, Reglas y Horarios) -->
       <section class="card" aria-labelledby="settingsTitle">
         <div class="card-header">
           <div>
-            <h2 class="section-title" id="settingsTitle">Configuración de Precios, Descuentos y Horarios</h2>
-            <span class="section-hint">Todos los cambios se reflejan al instante en la página pública</span>
+            <h2 class="section-title" id="settingsTitle">Super Admin — Configuración Total en Vivo</h2>
+            <span class="section-hint">Modificá marca, lógica de cobro, precios, WhatsApp, duraciones y horarios sin tocar código</span>
           </div>
         </div>
 
         <form id="settingsForm" novalidate>
+          <h3 class="zone-form-heading">1. Identidad y Contacto</h3>
           <div class="settings-grid">
+            <div class="field">
+              <label for="setBrandName">Nombre del Local</label>
+              <input type="text" id="setBrandName" maxlength="60" required />
+            </div>
+            <div class="field">
+              <label for="setWhatsapp">WhatsApp Cumpleaños (solo números, ej. 54911...)</label>
+              <input type="text" id="setWhatsapp" maxlength="20" placeholder="5491100000000" />
+            </div>
+            <div class="field">
+              <label for="setShowBirthdays">Sección Cumpleaños</label>
+              <select id="setShowBirthdays">
+                <option value="true">Visible en página pública</option>
+                <option value="false">Oculta</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="setShowPrices">Mostrar precios al público</label>
+              <select id="setShowPrices">
+                <option value="true">Sí, mostrar precios en vivo</option>
+                <option value="false">No, ocultar precios</option>
+              </select>
+            </div>
+          </div>
+
+          <h3 class="zone-form-heading settings-subhead">2. Motor de Lógica de Cobro y Reglas</h3>
+          <div class="settings-grid">
+            <div class="field">
+              <label for="setPricingMode">Modalidad de cobro</label>
+              <select id="setPricingMode">
+                <option value="per_zone">Por simulador + adicional por piloto extra</option>
+                <option value="per_player">Por piloto × hora (tarifa individual)</option>
+                <option value="flat">Tarifa fija por simulador/hora</option>
+              </select>
+            </div>
             <div class="field">
               <label for="setBasePrice">Precio base por hora ($)</label>
               <input type="number" id="setBasePrice" min="0" step="500" required />
@@ -300,6 +335,10 @@
               <input type="number" id="setMultiHourDiscount" min="0" max="80" required />
             </div>
             <div class="field">
+              <label for="setAllowedDurations">Duraciones permitidas (min, separadas por coma)</label>
+              <input type="text" id="setAllowedDurations" placeholder="60,120,180,240" />
+            </div>
+            <div class="field">
               <label for="setBuffer">Tiempo de reset/limpieza entre turnos</label>
               <select id="setBuffer">
                 <option value="0">Sin pausa (0 min)</option>
@@ -309,7 +348,7 @@
             </div>
           </div>
 
-          <h3 class="zone-form-heading settings-subhead">Horarios de Apertura por Día</h3>
+          <h3 class="zone-form-heading settings-subhead">3. Horarios de Apertura por Día</h3>
           <div class="schedule-grid" id="scheduleGrid"></div>
 
           <div class="settings-actions">

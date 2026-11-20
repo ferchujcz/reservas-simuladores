@@ -65,6 +65,12 @@
     timelineRefreshBtn: document.getElementById('timelineRefreshBtn'),
     timelineContainer: document.getElementById('timelineContainer'),
     settingsForm: document.getElementById('settingsForm'),
+    setBrandName: document.getElementById('setBrandName'),
+    setWhatsapp: document.getElementById('setWhatsapp'),
+    setShowBirthdays: document.getElementById('setShowBirthdays'),
+    setShowPrices: document.getElementById('setShowPrices'),
+    setPricingMode: document.getElementById('setPricingMode'),
+    setAllowedDurations: document.getElementById('setAllowedDurations'),
     setBasePrice: document.getElementById('setBasePrice'),
     setExtraPlayer: document.getElementById('setExtraPlayer'),
     setGroupThreshold: document.getElementById('setGroupThreshold'),
@@ -734,6 +740,12 @@
       if (!s) return;
       settingsCache = s;
 
+      els.setBrandName.value = s.brandName || 'Victory Simulator';
+      els.setWhatsapp.value = s.whatsappNumber || '5491100000000';
+      els.setShowBirthdays.value = String(s.showBirthdaysSection !== false);
+      els.setShowPrices.value = String(s.showPrices !== false);
+      els.setPricingMode.value = s.pricingMode || 'per_zone';
+      els.setAllowedDurations.value = Array.isArray(s.allowedDurations) ? s.allowedDurations.join(',') : '60,120,180,240';
       els.setBasePrice.value = String(s.basePricePerHour ?? 15000);
       els.setExtraPlayer.value = String(s.extraPlayerPricePerHour ?? 4000);
       els.setGroupThreshold.value = String(s.groupDiscountThreshold ?? 3);
@@ -783,6 +795,12 @@
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({
+          brandName: els.setBrandName.value.trim(),
+          whatsappNumber: els.setWhatsapp.value.trim(),
+          showBirthdaysSection: els.setShowBirthdays.value === 'true',
+          showPrices: els.setShowPrices.value === 'true',
+          pricingMode: els.setPricingMode.value,
+          allowedDurations: els.setAllowedDurations.value,
           basePricePerHour: Number(els.setBasePrice.value) || 0,
           extraPlayerPricePerHour: Number(els.setExtraPlayer.value) || 0,
           groupDiscountThreshold: parseInt(els.setGroupThreshold.value, 10) || 3,

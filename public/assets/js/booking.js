@@ -140,7 +140,14 @@
         : Number(s.basePricePerHour || 0);
 
     const extraPlayers = Math.max(0, players - 1);
-    const baseSubtotal = Math.round((hourlyBase + extraPlayers * Number(s.extraPlayerPricePerHour || 0)) * hours);
+    let baseSubtotal = 0;
+    if (s.pricingMode === 'per_player') {
+      baseSubtotal = Math.round(hourlyBase * players * hours);
+    } else if (s.pricingMode === 'flat') {
+      baseSubtotal = Math.round(hourlyBase * hours);
+    } else {
+      baseSubtotal = Math.round((hourlyBase + extraPlayers * Number(s.extraPlayerPricePerHour || 0)) * hours);
+    }
 
     let discountPercent = 0;
     const badges = [];
@@ -166,6 +173,11 @@
     els.sumTime.textContent = state.selectedSlot
       ? `${state.selectedSlot.label} (${state.durationMinutes / 60} h)`
       : 'Elegí un horario';
+
+    const priceBox = document.getElementById('priceBox');
+    if (priceBox) {
+      priceBox.classList.toggle('is-hidden', state.settings.showPrices === false);
+    }
 
     const price = calculateLivePrice();
     els.priceTotal.textContent = `$${price.total.toLocaleString('es-AR')} ${price.currency}`;
@@ -645,6 +657,45 @@
     });
   }
 
+  function applyDynamicSettingsToUI() {
+    const s = state.settings;
+    // Mostrar/ocultar sección de cumpleaños y actualizar link de WhatsApp
+    const eventsSec = document.getElementById('cumpleanos');
+    if (eventsSec) {
+      eventsSec.classList.toggle('is-hidden', s.showBirthdaysSection === false);
+      const waLink = eventsSec.querySelector('.btn-whatsapp');
+      if (waLink && s.whatsappNumber) {
+        const msg = encodeURIComponent(s.whatsappBirthdayText || `Hola ${s.brandName || 'Victory Simulator'}! Quiero consultar por un cumpleaños.`);
+        waLink.href = `https://wa.me/${s.whatsappNumber}?text=${msg}`;
+      }
+    }
+
+    // Regenerar botones de duración según allowedDurations
+    if (Array.isArray(s.allowedDurations) && s.allowedDurations.length > 0 && els.durationPills) {
+      if (!s.allowedDurations.includes(state.durationMinutes)) {
+        state.durationMinutes = s.allowedDurations[0];
+      }
+      els.durationPills.innerHTML = '';
+      s.allowedDurations.forEach((mins) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `duration-btn ${state.durationMinutes === mins ? 'selected' : ''}`;
+        btn.dataset.minutes = String(mins);
+        btn.textContent = mins >= 60 ? `${mins / 60} h` : `${mins} m`;
+        btn.addEventListener('click', () => {
+          state.durationMinutes = mins;
+          state.selectedSlot = null;
+          els.durationPills.querySelectorAll('.duration-btn').forEach((b) =>
+            b.classList.toggle('selected', b === btn)
+          );
+          updateSummary();
+          renderSlots();
+        });
+        els.durationPills.appendChild(btn);
+      });
+    }
+  }
+
   async function loadSettings() {
     try {
       const res = await fetch('/api/reservations/settings');
@@ -652,6 +703,7 @@
       const data = await res.json();
       if (data.settings) {
         state.settings = data.settings;
+        applyDynamicSettingsToUI();
       }
     } catch {
       // Usar valores por defecto si falla
