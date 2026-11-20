@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Victory Simulator — Reservá tu Turno de Simulación</title>
+  <meta name="description" content="Reservá tu simulador profesional en Victory Simulator. Disponibilidad en tiempo real y confirmación rápida.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Titillium+Web:ital,wght@0,700;0,900;1,700;1,900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/theme.css">
+  <link rel="stylesheet" href="/assets/css/booking.css">
+</head>
+<body>
+
+  <header class="navbar">
+    <div class="navbar-inner">
+      <a href="/" class="brand">
+        <div class="brand-mark">VS</div>
+        <div class="brand-text">
+          <span class="brand-title">Victory <span>Simulator</span></span>
+          <span class="brand-sub">Sim Racing &amp; Gaming Center</span>
+        </div>
+      </a>
+      <nav class="nav-actions" aria-label="Navegación principal">
+        <a href="#consultar-turno" class="btn btn-secondary btn-sm">Ver Estado de mi Turno</a>
+        <a href="#cumpleanos" class="btn btn-secondary btn-sm">Cumpleaños y Eventos</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero-banner" aria-label="Bienvenida a Victory Simulator">
+      <div class="hero-content">
+        <div>
+          <div class="hero-eyebrow">Reserva Online en Tiempo Real</div>
+          <h1 class="hero-title">Subite a la Pista en <span>Victory Simulator</span></h1>
+          <p class="hero-desc">
+            Elegí tu simulador, seleccioná fecha y bloque horario con disponibilidad verificada al instante y asegurá tu turno sin esperas.
+          </p>
+          <div class="hero-specs">
+            <span class="spec-pill">Direct Drive Pro</span>
+            <span class="spec-pill">Disponibilidad en Vivo</span>
+            <span class="spec-pill">Sin Registro Previo</span>
+          </div>
+        </div>
+        <div class="status-pill" id="tzIndicator">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">CONECTANDO...</span>
+        </div>
+      </div>
+    </section>
+
+    <div id="globalAlert"></div>
+
+    <!-- Barra de progreso de 3 pasos -->
+    <ol class="stepper" aria-label="Pasos de reserva">
+      <li class="step-item active" id="stepIndicator1">
+        <span class="step-badge">01</span>
+        <span class="step-label">Elegí tu Simulador</span>
+      </li>
+      <li class="step-item" id="stepIndicator2">
+        <span class="step-badge">02</span>
+        <span class="step-label">Fecha y Horario</span>
+      </li>
+      <li class="step-item" id="stepIndicator3">
+        <span class="step-badge">03</span>
+        <span class="step-label">Datos del Piloto</span>
+      </li>
+    </ol>
+
+    <div class="booking-layout">
+      <!-- Columna izquierda: Simulador + Calendario y Horarios -->
+      <div class="booking-column">
+        <section class="card" aria-labelledby="step1-heading">
+          <div class="card-header">
+            <h2 class="section-heading" id="step1-heading">
+              <span class="section-index">01</span> Simuladores Disponibles
+            </h2>
+            <button type="button" class="btn btn-secondary btn-sm" id="refreshZonesBtn">Actualizar</button>
+          </div>
+          <div id="zonesContainer" class="zones-grid">
+            <div class="skeleton-box"></div>
+            <div class="skeleton-box"></div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="step2-heading">
+          <div class="card-header">
+            <h2 class="section-heading" id="step2-heading">
+              <span class="section-index">02</span> Fecha, Duración y Bloques
+            </h2>
+          </div>
+
+          <div class="date-strip" id="dateStrip" role="group" aria-label="Fechas próximas"></div>
+
+          <div class="schedule-controls">
+            <div class="field">
+              <label for="bookingDate">Otra fecha</label>
+              <input type="date" id="bookingDate" />
+            </div>
+            <div class="field">
+              <label>Duración del turno</label>
+              <div class="duration-pills" id="durationPills" role="group" aria-label="Duración">
+                <button type="button" class="duration-btn" data-minutes="60">1 h</button>
+                <button type="button" class="duration-btn selected" data-minutes="120">2 h</button>
+                <button type="button" class="duration-btn" data-minutes="180">3 h</button>
+                <button type="button" class="duration-btn" data-minutes="240">4 h</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="slots-legend">
+            <span class="legend-item"><span class="legend-dot avail"></span> Disponible</span>
+            <span class="legend-item"><span class="legend-dot pend"></span> Pendiente de confirmación</span>
+            <span class="legend-item"><span class="legend-dot occ"></span> Confirmado / Ocupado</span>
+          </div>
+
+          <div id="slotsContainer">
+            <div class="empty-state">Seleccioná un simulador arriba para consultar los horarios disponibles.</div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Columna derecha: Pit Wall Summary + Formulario del Piloto -->
+      <aside class="sticky-column">
+        <section class="card" aria-labelledby="step3-heading">
+          <div class="card-header">
+            <h2 class="section-heading" id="step3-heading">
+              <span class="section-index">03</span> Tu Turno
+            </h2>
+          </div>
+
+          <div class="summary-panel" aria-live="polite">
+            <div class="summary-row">
+              <span class="summary-label">Simulador</span>
+              <span class="summary-value" id="sumZone">Sin seleccionar</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Capacidad</span>
+              <span class="summary-value mono" id="sumCap">—</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Fecha</span>
+              <span class="summary-value" id="sumDate">—</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Bloque Horario</span>
+              <span class="summary-value mono" id="sumTime">Elegí un horario</span>
+            </div>
+            <div class="price-box" id="priceBox">
+              <div class="price-box-top">
+                <span class="summary-label">Total estimado</span>
+                <span class="price-total mono" id="priceTotal">$0</span>
+              </div>
+              <div class="price-box-sub">
+                <span class="price-per-pilot mono" id="pricePerPilot">—</span>
+                <div class="price-badges" id="priceBadges"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="formFeedback"></div>
+
+          <form id="reservationForm" novalidate>
+            <div class="field">
+              <label for="clientName">Nombre y Apellido *</label>
+              <input type="text" id="clientName" required maxlength="80" autocomplete="name" placeholder="Ej. Lucas Fernández" />
+            </div>
+
+            <div class="field">
+              <label for="clientContact">Teléfono o Email de contacto *</label>
+              <input type="text" id="clientContact" required maxlength="100" placeholder="Ej. +54 11 5555-1234 o lucas@mail.com" />
+            </div>
+
+            <div class="field">
+              <label for="clientPlayers">Cantidad de Pilotos *</label>
+              <div class="players-stepper">
+                <button type="button" class="btn btn-secondary stepper-btn" id="playersDecBtn" aria-label="Restar piloto">−</button>
+                <input type="number" id="clientPlayers" min="1" max="20" value="1" required />
+                <button type="button" class="btn btn-secondary stepper-btn" id="playersIncBtn" aria-label="Sumar piloto">+</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="clientNotes">Notas opcionales</label>
+              <textarea id="clientNotes" rows="2" maxlength="200" placeholder="Ej. Carrera F1 / Turismo Carretera, volante específico..."></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-full" id="submitBtn" disabled>
+              Solicitar Reserva Ahora
+            </button>
+          </form>
+
+          <div id="confirmationContainer"></div>
+        </section>
+      </aside>
+    </div>
+
+    <!-- Sección Consultar Estado de Turno -->
+    <section class="card status-lookup-card" id="consultar-turno" aria-labelledby="lookupHeading">
+      <div class="card-header">
+        <div>
+          <h2 class="section-heading" id="lookupHeading">
+            <span class="section-index">TRACK</span> Consultar Estado de mi Turno
+          </h2>
+          <p class="lookup-sub">
+            Ingresá tu código de reserva (ej. <span class="mono">VS-0001</span>) para saber al instante si tu turno ya fue confirmado.
+          </p>
+        </div>
+      </div>
+      <form id="statusLookupForm" class="lookup-form" novalidate>
+        <input type="text" id="lookupCodeInput" maxlength="20" placeholder="Ej. VS-0001" aria-label="Código de reserva" />
+        <button type="submit" class="btn btn-emerald" id="lookupSubmitBtn">Consultar Estado</button>
+      </form>
+      <div id="lookupResult"></div>
+    </section>
+
+    <!-- Sección Cumpleaños y Eventos Privados (WhatsApp) -->
+    <section class="events-banner" id="cumpleanos" aria-labelledby="eventsHeading">
+      <div class="events-content">
+        <div>
+          <span class="events-eyebrow">Eventos Privados &amp; Torneos</span>
+          <h2 class="events-title" id="eventsHeading">¿Querés festejar tu <span>Cumpleaños</span> en Victory Simulator?</h2>
+          <p class="events-desc">
+            Armamos paquetes a medida para cumpleaños, torneos con amigos y eventos privados con simuladores exclusivos. Escribinos por WhatsApp para consultar disponibilidad y precios.
+          </p>
+        </div>
+        <!-- Reemplazar 5491100000000 por el número real de WhatsApp de Victory Simulator -->
+        <a
+          href="https://wa.me/5491100000000?text=Hola%20Victory%20Simulator!%20Quiero%20consultar%20para%20reservar%20un%20cumplea%C3%B1os%20o%20evento%20privado."
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn-whatsapp"
+        >
+          Consultar Cumpleaños por WhatsApp
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <footer class="site-footer">
+    Victory Simulator &mdash; Plataforma de Reservas en Tiempo Real
+  </footer>
+
+  <script src="/assets/js/booking.js" defer></script>
+</body>
+</html>

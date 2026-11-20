@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Victory Simulator — Command Center (Admin)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Titillium+Web:ital,wght@0,700;0,900;1,700;1,900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/theme.css">
+  <link rel="stylesheet" href="/assets/css/admin.css">
+</head>
+<body>
+
+  <header class="navbar">
+    <div class="navbar-inner">
+      <a href="/admin/" class="brand">
+        <div class="brand-mark">VS</div>
+        <div class="brand-text">
+          <span class="brand-title">Victory <span>Simulator</span></span>
+          <span class="brand-sub">Command Center · Administración</span>
+        </div>
+      </a>
+      <div class="nav-actions">
+        <span id="adminUserChip" class="user-chip is-hidden"></span>
+        <a href="/" class="btn btn-secondary btn-sm">Ver Sitio Público</a>
+        <button type="button" id="logoutBtn" class="btn btn-danger btn-sm is-hidden">Cerrar Sesión</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Vista de Login -->
+    <section id="loginSection" class="login-wrapper is-hidden" aria-labelledby="loginTitle">
+      <div class="card login-card">
+        <h1 class="login-title" id="loginTitle">Acceso Command Center</h1>
+        <p class="login-subtitle">Ingresá con tu cuenta de administrador de Victory Simulator.</p>
+        <div id="loginFeedback"></div>
+        <form id="loginForm" novalidate>
+          <div class="field">
+            <label for="loginEmail">Correo electrónico</label>
+            <input type="email" id="loginEmail" required autocomplete="username" placeholder="admin@victorysimulator.com" />
+          </div>
+          <div class="field">
+            <label for="loginPassword">Contraseña</label>
+            <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="••••••••" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-full" id="loginSubmitBtn">
+            Ingresar al Command Center
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Vista de Dashboard Protegido -->
+    <div id="dashboardSection" class="dashboard-stack is-hidden">
+      <!-- KPI Deck -->
+      <section class="kpi-grid" aria-label="Resumen de estado">
+        <div class="kpi-card kpi-amber">
+          <span class="kpi-label">Pendientes</span>
+          <span class="kpi-value" id="kpiPending">0</span>
+        </div>
+        <div class="kpi-card kpi-emerald">
+          <span class="kpi-label">Confirmadas</span>
+          <span class="kpi-value" id="kpiConfirmed">0</span>
+        </div>
+        <div class="kpi-card kpi-danger">
+          <span class="kpi-label">Canceladas / Rech.</span>
+          <span class="kpi-value" id="kpiCancelled">0</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Vencidas (Historial)</span>
+          <span class="kpi-value" id="kpiExpired">0</span>
+        </div>
+        <div class="kpi-card kpi-cyan">
+          <span class="kpi-label">Simuladores Activos</span>
+          <span class="kpi-value" id="kpiZones">0 / 0</span>
+        </div>
+      </section>
+
+      <!-- Vista de Agenda Visual por Simulador -->
+      <section class="card" aria-labelledby="timelineTitle">
+        <div class="card-header">
+          <div>
+            <h2 class="section-title" id="timelineTitle">Agenda Visual en Vivo</h2>
+            <span class="section-hint">Hacé clic en un bloque libre para precargar un turno manual</span>
+          </div>
+          <div class="timeline-controls">
+            <input type="date" id="timelineDate" aria-label="Fecha de agenda" />
+            <button type="button" class="btn btn-secondary btn-sm" id="timelineRefreshBtn">Actualizar</button>
+          </div>
+        </div>
+        <div class="table-wrap" id="timelineContainer">
+          <div class="empty-cell">Cargando agenda visual...</div>
+        </div>
+      </section>
+
+      <!-- Crear Turno Manual (Presencial / WhatsApp / Mantenimiento) -->
+      <section class="card" aria-labelledby="manualResTitle">
+        <div class="card-header">
+          <h2 class="section-title" id="manualResTitle">Generar Turno Manual / Mantenimiento</h2>
+          <label class="maint-toggle">
+            <input type="checkbox" id="manualMaintCheck" />
+            <span>Bloqueo por Mantenimiento</span>
+          </label>
+        </div>
+
+        <form id="manualResForm" class="manual-res-grid" novalidate>
+          <div class="field">
+            <label for="manualZone">Simulador *</label>
+            <select id="manualZone" required>
+              <option value="">Seleccionar simulador...</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="manualDate">Fecha *</label>
+            <input type="date" id="manualDate" required />
+          </div>
+          <div class="field">
+            <label for="manualStartTime">Hora de inicio *</label>
+            <input type="time" id="manualStartTime" value="18:00" required />
+          </div>
+          <div class="field">
+            <label for="manualDuration">Duración *</label>
+            <select id="manualDuration">
+              <option value="60">1 hora</option>
+              <option value="120" selected>2 horas</option>
+              <option value="180">3 horas</option>
+              <option value="240">4 horas</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="manualStatus">Estado inicial</label>
+            <select id="manualStatus">
+              <option value="confirmada" selected>Confirmada</option>
+              <option value="pendiente">Pendiente</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="manualName">Nombre del Piloto *</label>
+            <input type="text" id="manualName" required maxlength="80" placeholder="Ej. Martín López" />
+          </div>
+          <div class="field">
+            <label for="manualContact">Contacto (Tel / Email)</label>
+            <input type="text" id="manualContact" maxlength="100" placeholder="Ej. +54 11 5555-1234" />
+          </div>
+          <div class="field">
+            <label for="manualPlayers">Pilotos</label>
+            <input type="number" id="manualPlayers" min="1" max="50" value="1" />
+          </div>
+          <div class="field manual-notes-col">
+            <label for="manualNotes">Notas / Referencia</label>
+            <input type="text" id="manualNotes" maxlength="200" placeholder="Ej. Seña abonada / Cumpleaños" />
+          </div>
+          <div class="field manual-submit-col">
+            <button type="submit" class="btn btn-emerald btn-full" id="manualResSubmitBtn">
+              Crear Turno
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Gestión de Reservas -->
+      <section class="card" aria-labelledby="resSectionTitle">
+        <div class="card-header">
+          <h2 class="section-title" id="resSectionTitle">Gestión de Turnos y Reservas</h2>
+          <button type="button" class="btn btn-secondary btn-sm" id="refreshAllBtn">Actualizar Todo</button>
+        </div>
+
+        <div class="filters-bar">
+          <div class="field">
+            <label for="filterDate">Fecha</label>
+            <input type="date" id="filterDate" />
+          </div>
+          <div class="field">
+            <label for="filterZone">Simulador</label>
+            <select id="filterZone">
+              <option value="">Todos los simuladores</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="filterStatus">Estado</label>
+            <select id="filterStatus">
+              <option value="">Todos los estados</option>
+              <option value="pendiente">Pendientes</option>
+              <option value="confirmada">Confirmadas</option>
+              <option value="cancelada">Canceladas</option>
+              <option value="rechazada">Rechazadas</option>
+              <option value="expirada">Expiradas</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="filterSearch">Buscar (código / piloto)</label>
+            <input type="search" id="filterSearch" placeholder="Ej. VS-0012 o Lucas" />
+          </div>
+          <div class="filter-actions">
+            <button type="button" class="btn btn-primary" id="applyFiltersBtn">Filtrar</button>
+            <button type="button" class="btn btn-secondary" id="clearFiltersBtn">Limpiar</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Simulador</th>
+                <th>Inicio</th>
+                <th>Fin</th>
+                <th>Estado</th>
+                <th>Piloto / Notas</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="reservationsTbody">
+              <tr><td colspan="7" class="empty-cell">Cargando reservas...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Gestión de Simuladores / Zonas -->
+      <section class="card" aria-labelledby="zonesSectionTitle">
+        <div class="card-header">
+          <h2 class="section-title" id="zonesSectionTitle">Simuladores y Zonas</h2>
+        </div>
+
+        <div class="zones-admin-grid">
+          <div class="zone-form-panel">
+            <h3 class="zone-form-heading" id="zoneFormTitle">Nuevo Simulador / Zona</h3>
+            <form id="zoneForm" novalidate>
+              <input type="hidden" id="editZoneId" value="" />
+              <div class="field">
+                <label for="zoneName">Nombre del Simulador *</label>
+                <input type="text" id="zoneName" required maxlength="80" placeholder="Ej. Cockpit F1 Motion #1" />
+              </div>
+              <div class="field">
+                <label for="zoneDesc">Equipamiento / Descripción</label>
+                <input type="text" id="zoneDesc" maxlength="160" placeholder="Ej. Direct Drive 20Nm · Triple Screen 165Hz" />
+              </div>
+              <div class="field">
+                <label for="zoneCap">Capacidad máxima (pilotos) *</label>
+                <input type="number" id="zoneCap" min="1" max="50" value="4" required />
+              </div>
+              <div class="zone-form-actions">
+                <button type="submit" class="btn btn-emerald btn-full" id="zoneSaveBtn">Guardar Simulador</button>
+                <button type="button" class="btn btn-secondary is-hidden" id="zoneCancelEditBtn">Cancelar</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>Equipamiento</th>
+                  <th>Capacidad</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="zonesTbody">
+                <tr><td colspan="6" class="empty-cell">Cargando simuladores...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <!-- Configuración de Precios, Descuentos, Buffer y Horarios -->
+      <section class="card" aria-labelledby="settingsTitle">
+        <div class="card-header">
+          <div>
+            <h2 class="section-title" id="settingsTitle">Configuración de Precios, Descuentos y Horarios</h2>
+            <span class="section-hint">Todos los cambios se reflejan al instante en la página pública</span>
+          </div>
+        </div>
+
+        <form id="settingsForm" novalidate>
+          <div class="settings-grid">
+            <div class="field">
+              <label for="setBasePrice">Precio base por hora ($)</label>
+              <input type="number" id="setBasePrice" min="0" step="500" required />
+            </div>
+            <div class="field">
+              <label for="setExtraPlayer">Adicional por piloto extra / hora ($)</label>
+              <input type="number" id="setExtraPlayer" min="0" step="500" required />
+            </div>
+            <div class="field">
+              <label for="setGroupThreshold">Descuento grupal desde (pilotos)</label>
+              <input type="number" id="setGroupThreshold" min="2" max="20" required />
+            </div>
+            <div class="field">
+              <label for="setGroupDiscount">Descuento grupal (%)</label>
+              <input type="number" id="setGroupDiscount" min="0" max="80" required />
+            </div>
+            <div class="field">
+              <label for="setMultiHourDiscount">Descuento por 2+ horas (%)</label>
+              <input type="number" id="setMultiHourDiscount" min="0" max="80" required />
+            </div>
+            <div class="field">
+              <label for="setBuffer">Tiempo de reset/limpieza entre turnos</label>
+              <select id="setBuffer">
+                <option value="0">Sin pausa (0 min)</option>
+                <option value="15">15 minutos</option>
+                <option value="30">30 minutos</option>
+              </select>
+            </div>
+          </div>
+
+          <h3 class="zone-form-heading settings-subhead">Horarios de Apertura por Día</h3>
+          <div class="schedule-grid" id="scheduleGrid"></div>
+
+          <div class="settings-actions">
+            <button type="submit" class="btn btn-primary" id="saveSettingsBtn">Guardar Configuración</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <!-- Modal de reprogramación de turno -->
+  <div id="rescheduleModal" class="modal-backdrop is-hidden" role="dialog" aria-modal="true" aria-labelledby="rescheduleModalTitle">
+    <div class="modal-card">
+      <h3 class="modal-title" id="rescheduleModalTitle">Reprogramar Turno</h3>
+      <form id="rescheduleForm" novalidate>
+        <input type="hidden" id="reschedId" value="" />
+        <div class="field">
+          <label for="reschedZone">Simulador</label>
+          <select id="reschedZone" required></select>
+        </div>
+        <div class="field">
+          <label for="reschedDate">Nueva Fecha</label>
+          <input type="date" id="reschedDate" required />
+        </div>
+        <div class="field">
+          <label for="reschedTime">Nueva Hora de Inicio</label>
+          <input type="time" id="reschedTime" required />
+        </div>
+        <div class="field">
+          <label for="reschedDuration">Duración</label>
+          <select id="reschedDuration">
+            <option value="60">1 hora</option>
+            <option value="120">2 horas</option>
+            <option value="180">3 horas</option>
+            <option value="240">4 horas</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="reschedCancelBtn">Cancelar</button>
+          <button type="submit" class="btn btn-emerald" id="reschedSaveBtn">Guardar Cambio</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación para acciones destructivas -->
+  <div id="confirmModal" class="modal-backdrop is-hidden" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+    <div class="modal-card">
+      <h3 class="modal-title" id="confirmModalTitle">Confirmar acción</h3>
+      <p class="modal-body" id="confirmModalBody"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="confirmModalCancel">Volver</button>
+        <button type="button" class="btn btn-danger" id="confirmModalOk">Sí, confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <footer class="site-footer">
+    Victory Simulator &mdash; Command Center Administrativo
+  </footer>
+
+  <script src="/assets/js/admin.js" defer></script>
+</body>
+</html>

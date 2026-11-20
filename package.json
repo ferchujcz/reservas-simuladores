@@ -1,0 +1,30 @@
+{
+  "name": "reservas-gaming",
+  "version": "1.0.0",
+  "description": "Backend mínimo para sistema de reservas de zonas gaming",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node src/test/verifyAll.js",
+    "test:db": "node src/test/run7tests.js",
+    "seed:demo": "node src/test/seedDemo.js",
+    "migrate": "node src/scripts/migrate.js"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.17",
+    "bcrypt": "^5.1.1",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.3",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
