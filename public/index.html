@@ -39,7 +39,7 @@
             Elegí tu simulador, seleccioná fecha y bloque horario con disponibilidad verificada al instante y asegurá tu turno sin esperas.
           </p>
           <div class="hero-specs">
-            <span class="spec-pill">Direct Drive Pro</span>
+            <span class="spec-pill">Simuladores Pro &amp; PlayStation</span>
             <span class="spec-pill">Disponibilidad en Vivo</span>
             <span class="spec-pill">Sin Registro Previo</span>
           </div>
@@ -57,7 +57,7 @@
     <ol class="stepper" aria-label="Pasos de reserva">
       <li class="step-item active" id="stepIndicator1">
         <span class="step-badge">01</span>
-        <span class="step-label">Elegí tu Simulador</span>
+        <span class="step-label">Elegí tu Zona</span>
       </li>
       <li class="step-item" id="stepIndicator2">
         <span class="step-badge">02</span>
@@ -65,17 +65,17 @@
       </li>
       <li class="step-item" id="stepIndicator3">
         <span class="step-badge">03</span>
-        <span class="step-label">Datos del Piloto</span>
+        <span class="step-label">Tus Datos</span>
       </li>
     </ol>
 
     <div class="booking-layout">
-      <!-- Columna izquierda: Simulador + Calendario y Horarios -->
+      <!-- Columna izquierda: Zona / Simulador + Calendario y Horarios -->
       <div class="booking-column">
         <section class="card" aria-labelledby="step1-heading">
           <div class="card-header">
             <h2 class="section-heading" id="step1-heading">
-              <span class="section-index">01</span> Simuladores Disponibles
+              <span class="section-index">01</span> Zonas, Simuladores y PlayStation
             </h2>
             <button type="button" class="btn btn-secondary btn-sm" id="refreshZonesBtn">Actualizar</button>
           </div>
@@ -133,7 +133,7 @@
 
           <div class="summary-panel" aria-live="polite">
             <div class="summary-row">
-              <span class="summary-label">Simulador</span>
+              <span class="summary-label">Zona elegida</span>
               <span class="summary-value" id="sumZone">Sin seleccionar</span>
             </div>
             <div class="summary-row">
@@ -174,17 +174,26 @@
             </div>
 
             <div class="field">
-              <label for="clientPlayers">Cantidad de Pilotos *</label>
+              <label for="clientPlayers">Cantidad de Jugadores *</label>
               <div class="players-stepper">
-                <button type="button" class="btn btn-secondary stepper-btn" id="playersDecBtn" aria-label="Restar piloto">−</button>
+                <button type="button" class="btn btn-secondary stepper-btn" id="playersDecBtn" aria-label="Restar jugador">−</button>
                 <input type="number" id="clientPlayers" min="1" max="20" value="1" required />
-                <button type="button" class="btn btn-secondary stepper-btn" id="playersIncBtn" aria-label="Sumar piloto">+</button>
+                <button type="button" class="btn btn-secondary stepper-btn" id="playersIncBtn" aria-label="Sumar jugador">+</button>
               </div>
             </div>
 
             <div class="field">
+              <label for="clientPayment">¿Cómo preferís abonar? *</label>
+              <select id="clientPayment" required>
+                <option value="Efectivo en el local">Efectivo en el local</option>
+                <option value="Transferencia bancaria">Transferencia bancaria</option>
+                <option value="Tarjeta / QR en el local">Tarjeta / QR en el local</option>
+              </select>
+            </div>
+
+            <div class="field">
               <label for="clientNotes">Notas opcionales</label>
-              <textarea id="clientNotes" rows="2" maxlength="200" placeholder="Ej. Carrera F1 / Turismo Carretera, volante específico..."></textarea>
+              <textarea id="clientNotes" rows="2" maxlength="200" placeholder="Ej. FIFA / F1 / Turismo Carretera, cantidad de joysticks..."></textarea>
             </div>
 
             <button type="submit" class="btn btn-primary btn-full" id="submitBtn" disabled>

@@ -58,6 +58,7 @@
     clientName: document.getElementById('clientName'),
     clientContact: document.getElementById('clientContact'),
     clientPlayers: document.getElementById('clientPlayers'),
+    clientPayment: document.getElementById('clientPayment'),
     playersDecBtn: document.getElementById('playersDecBtn'),
     playersIncBtn: document.getElementById('playersIncBtn'),
     priceTotal: document.getElementById('priceTotal'),
@@ -168,7 +169,7 @@
 
   function updateSummary() {
     els.sumZone.textContent = state.selectedZone ? state.selectedZone.nombre : 'Sin seleccionar';
-    els.sumCap.textContent = state.selectedZone ? `Hasta ${state.selectedZone.capacidad} pilotos` : '—';
+    els.sumCap.textContent = state.selectedZone ? `Hasta ${state.selectedZone.capacidad} jugadores` : '—';
     els.sumDate.textContent = state.selectedDate ? formatHumanDate(state.selectedDate) : '—';
     els.sumTime.textContent = state.selectedSlot
       ? `${state.selectedSlot.label} (${state.durationMinutes / 60} h)`
@@ -183,7 +184,7 @@
     els.priceTotal.textContent = `$${price.total.toLocaleString('es-AR')} ${price.currency}`;
     els.pricePerPilot.textContent =
       price.players > 1
-        ? `$${price.perPlayer.toLocaleString('es-AR')} c/u (${price.players} pilotos)`
+        ? `$${price.perPlayer.toLocaleString('es-AR')} c/u (${price.players} jugadores)`
         : 'Tarifa individual';
     els.priceBadges.innerHTML = price.badges
       .map((b) => `<span class="discount-chip">${escapeHtml(b)}</span>`)
@@ -338,7 +339,7 @@
         </div>
         <div class="zone-footer">
           <span class="text-muted">Disponible hoy</span>
-          <span class="capacity-pill">Máx. ${zone.capacidad} pil.</span>
+          <span class="capacity-pill">Máx. ${zone.capacidad} jug.</span>
         </div>
       `;
 
@@ -562,6 +563,7 @@
     const nombre = els.clientName.value.trim();
     const contacto = els.clientContact.value.trim();
     const jugadores = parseInt(els.clientPlayers.value, 10);
+    const metodoPago = els.clientPayment ? els.clientPayment.value : 'Efectivo en el local';
     const notas = els.clientNotes.value.trim();
 
     if (nombre.length < 2) {
@@ -598,6 +600,7 @@
           nombre,
           contacto,
           jugadores,
+          metodoPago,
           notas,
         }),
       });

@@ -143,7 +143,7 @@ router.get('/availability/:zoneId', async (req, res) => {
 // Crear una nueva solicitud de reserva pública (validada en servidor y atómica con constraint GIST)
 router.post('/', reservationRateLimiter, csrfOriginMiddleware, async (req, res) => {
   try {
-    const { zoneId, start, end, notas, nombre, contacto, jugadores, solicitadoPor } = req.body;
+    const { zoneId, start, end, notas, nombre, contacto, jugadores, metodoPago, solicitadoPor } = req.body;
 
     if (!validateInteger(zoneId)) {
       return res.status(400).json({ error: 'ID de zona inválido' });
@@ -213,7 +213,8 @@ router.post('/', reservationRateLimiter, csrfOriginMiddleware, async (req, res) 
     if (nombre && typeof nombre === 'string' && nombre.trim()) {
       const parts = [`Solicitante: ${nombre.trim()}`];
       if (contacto && String(contacto).trim()) parts.push(`Contacto: ${String(contacto).trim()}`);
-      if (jugadores) parts.push(`Pilotos: ${jugadores}`);
+      if (jugadores) parts.push(`Jugadores: ${jugadores}`);
+      if (metodoPago && String(metodoPago).trim()) parts.push(`Pago: ${String(metodoPago).trim().slice(0, 50)}`);
       if (pricing.total > 0) parts.push(`Total est.: $${pricing.total.toLocaleString('es-AR')} ${pricing.currency}`);
       if (finalNotas) parts.push(`Notas: ${finalNotas}`);
       finalNotas = parts.join(' | ');

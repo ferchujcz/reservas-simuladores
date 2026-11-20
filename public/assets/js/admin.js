@@ -481,6 +481,7 @@
       } else if (r.estado === 'confirmada') {
         actionsHtml = `
           <div class="actions-group">
+            <button type="button" class="btn btn-emerald btn-sm" data-res-action="whatsapp" data-res-id="${r.id}">Avisar WhatsApp</button>
             <button type="button" class="btn btn-secondary btn-sm" data-res-action="reschedule" data-res-id="${r.id}">Reprogramar</button>
             <button type="button" class="btn btn-danger btn-sm" data-res-action="cancel" data-res-id="${r.id}">Cancelar</button>
           </div>
@@ -500,6 +501,27 @@
     });
   }
 
+  function buildWhatsAppConfirmUrl(r) {
+    const code = `VS-${String(r.id).padStart(4, '0')}`;
+    const notas = String(r.notas || '');
+    const nameMatch = notas.match(/(?:Solicitante|Piloto):\s*([^|]+)/i);
+    const contactMatch = notas.match(/Contacto:\s*([^|]+)/i);
+    const clientName = nameMatch ? nameMatch[1].trim() : '';
+    const rawContact = contactMatch ? contactMatch[1].trim() : '';
+    const digits = rawContact.includes('@') ? '' : rawContact.replace(/[^\d]/g, '');
+
+    const brand = settingsCache?.brandName || 'Victory Simulator';
+    const zona = r.zona_nombre || `Zona #${r.zona_id}`;
+    const fechaHora = formatDateTime(r.inicio);
+    const saludo = clientName ? `¡Hola ${clientName}!` : '¡Hola!';
+    const trackUrl = `${window.location.origin}/?turno=${code}`;
+    const text = `${saludo} Tu turno ${code} en ${brand} quedó CONFIRMADO para el ${fechaHora} (${zona}). Podés ver el estado acá: ${trackUrl} — ¡Te esperamos!`;
+
+    return digits.length >= 8
+      ? `https://wa.me/${digits}?text=${encodeURIComponent(text)}`
+      : `https://wa.me/?text=${encodeURIComponent(text)}`;
+  }
+
   async function executeReservationAction(id, action) {
     let url = `/api/reservations/${id}`;
     let method = 'DELETE';
@@ -511,6 +533,8 @@
       method = 'PUT';
     }
 
+    const resBefore = reservationsCache.find((item) => item.id === id);
+
     try {
       const res = await fetch(url, {
         method,
@@ -521,8 +545,18 @@
         showToast(data.error || 'No se pudo completar la operación.', 'error');
       } else {
         showToast(`${data.message || 'Operación exitosa'} (VS-${String(id).padStart(4, '0')}).`);
+        if (action === 'confirm' && resBefore) {
+          const waUrl = buildWhatsAppConfirmUrl(resBefore);
+          openConfirmModal(
+            `¡Turno VS-${String(id).padStart(4, '0')} Confirmado!`,
+            '¿Querés abrir WhatsApp ahora mismo con el mensaje de confirmación ya redactado para enviárselo al cliente?',
+            () => {
+              window.open(waUrl, '_blank', 'noopener,noreferrer');
+            }
+          );
+        }
       }
-      await Promise.all([loadReservations(), loadSummary()]);
+      await Promise.all([loadReservations(), loadSummary(), loadTimeline()]);
     } catch {
       showToast('Error de red al ejecutar la acción.', 'error');
     }
@@ -537,6 +571,11 @@
 
     if (action === 'confirm') {
       executeReservationAction(id, 'confirm');
+    } else if (action === 'whatsapp') {
+      const targetRes = reservationsCache.find((item) => item.id === id);
+      if (targetRes) {
+        window.open(buildWhatsAppConfirmUrl(targetRes), '_blank', 'noopener,noreferrer');
+      }
     } else if (action === 'reschedule') {
       openRescheduleModal(id);
     } else if (action === 'reject') {
