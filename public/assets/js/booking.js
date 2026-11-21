@@ -265,7 +265,7 @@
       const data = await res.json();
       if (res.ok && data.status === 'healthy') {
         els.statusDot.className = 'status-dot online';
-        els.statusText.textContent = `PISTA EN LÍNEA · ${data.timezone || 'Local'}`;
+        els.statusText.textContent = 'RESERVAS EN LÍNEA';
       } else {
         els.statusDot.className = 'status-dot offline';
         els.statusText.textContent = 'BASE DE DATOS DESCONECTADA';
