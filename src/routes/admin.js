@@ -15,6 +15,7 @@ import {
 import {
   getBusinessSettings,
   updateBusinessSettings,
+  validateBusinessHours,
 } from '../services/settingsService.js';
 import {
   validateInteger,
@@ -24,7 +25,7 @@ import {
   validateRange,
   ERROR_MESSAGES,
 } from '../validators.js';
-import { query } from '../config/db.js';
+import { query, getTimezone } from '../config/db.js';
 
 const router = Router();
 
@@ -175,6 +176,13 @@ router.post('/reservations', async (req, res) => {
       return res.status(400).json({ error: 'La duración debe ser de entre 30 minutos y 12 horas' });
     }
 
+    const settings = await getBusinessSettings();
+    const tz = await getTimezone();
+    const hoursCheck = validateBusinessHours(settings, startDate, endDate, tz);
+    if (!hoursCheck.ok) {
+      return res.status(400).json({ error: hoursCheck.error });
+    }
+
     const zone = await getZoneById(parseInt(zoneId, 10));
     if (!zone) {
       return res.status(404).json({ error: 'Simulador / Zona no encontrado' });
@@ -279,6 +287,13 @@ router.put('/reservations/:id/reschedule', async (req, res) => {
     }
 
     await expirePendingReservations();
+
+    const settings = await getBusinessSettings();
+    const tz = await getTimezone();
+    const hoursCheck = validateBusinessHours(settings, new Date(start), new Date(end), tz);
+    if (!hoursCheck.ok) {
+      return res.status(400).json({ error: hoursCheck.error });
+    }
 
     const result = await rescheduleReservation(reservationId, {
       zoneId: zoneId ? parseInt(zoneId, 10) : undefined,

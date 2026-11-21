@@ -18,8 +18,9 @@ import {
 import {
   getBusinessSettings,
   calculateReservationPrice,
+  validateBusinessHours,
 } from '../services/settingsService.js';
-import { query } from '../config/db.js';
+import { query, getTimezone } from '../config/db.js';
 import { validateInteger, validateDateTime, validateRange } from '../validators.js';
 
 const router = Router();
@@ -200,8 +201,14 @@ router.post('/', reservationRateLimiter, csrfOriginMiddleware, async (req, res) 
       }
     }
 
-    // Calcular precio oficial en el servidor
+    // Calcular precio oficial y validar horarios de apertura/cierre en el servidor
     const settings = await getBusinessSettings();
+    const tz = await getTimezone();
+    const hoursCheck = validateBusinessHours(settings, startDate, endDate, tz);
+    if (!hoursCheck.ok) {
+      return res.status(400).json({ error: hoursCheck.error });
+    }
+
     const pricing = calculateReservationPrice(settings, {
       zoneId: parseInt(zoneId, 10),
       durationMinutes,
@@ -230,11 +237,14 @@ router.post('/', reservationRateLimiter, csrfOriginMiddleware, async (req, res) 
     // Expirar reservas pendientes vencidas antes de verificar disponibilidad
     await expirePendingReservations();
 
-    // Verificar disponibilidad previa
-    const overlaps = await checkAvailability(parseInt(zoneId, 10), startDate, endDate);
+    // Verificar disponibilidad previa respetando el buffer de limpieza/reset si está configurado
+    const bufferMs = (Number(settings.resetBufferMinutes) || 0) * 60 * 1000;
+    const checkStart = new Date(startDate.getTime() - bufferMs);
+    const checkEnd = new Date(endDate.getTime() + bufferMs);
+    const overlaps = await checkAvailability(parseInt(zoneId, 10), checkStart, checkEnd);
     if (overlaps.length > 0) {
       return res.status(409).json({
-        error: 'El horario seleccionado acaba de ocuparse. Por favor elija otro horario.',
+        error: 'El horario seleccionado se superpone con otro turno o no tiene suficiente tiempo libre disponible. Por favor elegí otra duración u horario.',
         conflicts: overlaps.map((r) => ({
           id: r.id,
           inicio: r.inicio,

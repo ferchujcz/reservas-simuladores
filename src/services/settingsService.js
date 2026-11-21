@@ -191,3 +191,74 @@ export function calculateReservationPrice(settings, { zoneId, durationMinutes, p
     appliedRules,
   };
 }
+
+// Validar que una reserva respete los días y horarios de apertura/cierre configurados
+export function validateBusinessHours(settings, startDate, endDate, timeZone = 'America/Argentina/Buenos_Aires') {
+  try {
+    const fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      weekday: 'short',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+
+    const parseParts = (d) => {
+      const parts = Object.fromEntries(fmt.formatToParts(d).map((p) => [p.type, p.value]));
+      const wdMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+      const hour = parts.hour === '24' ? 0 : parseInt(parts.hour, 10);
+      const minute = parseInt(parts.minute, 10);
+      return {
+        dow: wdMap[parts.weekday],
+        dateKey: `${parts.year}-${parts.month}-${parts.day}`,
+        minutesOfDay: hour * 60 + minute,
+      };
+    };
+
+    const s = parseParts(startDate);
+    const e = parseParts(endDate);
+    const dayCfg = settings.schedule?.[s.dow];
+
+    if (!dayCfg || !dayCfg.open) {
+      return { ok: false, error: 'El local permanece cerrado en la fecha seleccionada.' };
+    }
+
+    // Permitir cierre exacto a las 24:00 (00:00 del día siguiente)
+    let endMinutes = e.minutesOfDay;
+    if (e.dateKey !== s.dateKey) {
+      if (e.minutesOfDay === 0) {
+        endMinutes = 24 * 60;
+      } else {
+        return { ok: false, error: 'La reserva no puede extenderse más allá del horario de cierre.' };
+      }
+    }
+
+    const openMin = dayCfg.start * 60;
+    const closeMin = dayCfg.end * 60;
+
+    if (s.minutesOfDay < openMin) {
+      return {
+        ok: false,
+        error: `El horario de inicio es anterior a la apertura (${String(dayCfg.start).padStart(2, '0')}:00 hs).`,
+      };
+    }
+
+    if (endMinutes > closeMin) {
+      const maxFreeHours = Math.floor((closeMin - s.minutesOfDay) / 60);
+      return {
+        ok: false,
+        error:
+          maxFreeHours >= 1
+            ? `Supera el horario de cierre (${String(dayCfg.end).padStart(2, '0')}:00 hs). Solo queda(n) ${maxFreeHours} hora(s) disponible(s) desde ese inicio.`
+            : `Supera el horario de cierre (${String(dayCfg.end).padStart(2, '0')}:00 hs).`,
+      };
+    }
+
+    return { ok: true };
+  } catch {
+    return { ok: true };
+  }
+}

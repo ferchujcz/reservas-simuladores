@@ -6,6 +6,7 @@
   let csrfToken = '';
   let zonesCache = [];
   let reservationsCache = [];
+  let timelineReservationsCache = [];
   let settingsCache = null;
   let pendingModalAction = null;
 
@@ -640,6 +641,7 @@
       if (!res.ok) return;
       const data = await res.json();
       const dayRes = (data.reservations || []).filter((r) => ['pendiente', 'confirmada'].includes(r.estado));
+      timelineReservationsCache = dayRes;
 
       const [year, month, day] = dateVal.split('-').map(Number);
       const dow = new Date(year, month - 1, day).getDay();
@@ -688,12 +690,65 @@
     }
   }
 
+  function syncManualDurationLimits() {
+    const zoneId = parseInt(els.manualZone.value, 10);
+    const dateVal = els.manualDate.value;
+    const timeVal = els.manualStartTime.value;
+    if (!dateVal || !timeVal) return;
+
+    const [year, month, day] = dateVal.split('-').map(Number);
+    const [hour, minute] = timeVal.split(':').map(Number);
+    const dow = new Date(year, month - 1, day).getDay();
+    const sched = settingsCache?.schedule?.[dow] || { open: true, start: 10, end: 23 };
+
+    const startMs = new Date(year, month - 1, day, hour, minute, 0).getTime();
+    const closeMs = new Date(year, month - 1, day, sched.end, 0, 0).getTime();
+
+    // Calcular máximo tiempo libre continuo hasta el cierre o la próxima reserva en esa zona
+    let maxEndMs = sched.open ? closeMs : startMs;
+    if (zoneId) {
+      const relevant = [...reservationsCache, ...timelineReservationsCache].filter(
+        (r) => r.zona_id === zoneId && ['pendiente', 'confirmada'].includes(r.estado)
+      );
+      for (const r of relevant) {
+        const rs = new Date(r.inicio).getTime();
+        const re = new Date(r.fin).getTime();
+        if (startMs < re && startMs >= rs) {
+          maxEndMs = startMs;
+          break;
+        }
+        if (rs > startMs && rs < maxEndMs) {
+          maxEndMs = rs;
+        }
+      }
+    }
+
+    const maxFreeMinutes = Math.max(0, Math.floor((maxEndMs - startMs) / 60000));
+    const options = Array.from(els.manualDuration.options);
+    let firstValid = null;
+    options.forEach((opt) => {
+      const mins = parseInt(opt.value, 10);
+      const fits = mins <= maxFreeMinutes;
+      opt.disabled = !fits;
+      if (fits && !firstValid) firstValid = opt.value;
+    });
+
+    if (els.manualDuration.selectedOptions[0]?.disabled && firstValid) {
+      els.manualDuration.value = firstValid;
+    }
+  }
+
+  els.manualZone.addEventListener('change', syncManualDurationLimits);
+  els.manualDate.addEventListener('change', syncManualDurationLimits);
+  els.manualStartTime.addEventListener('change', syncManualDurationLimits);
+
   els.timelineContainer.addEventListener('click', (e) => {
     const cell = e.target.closest('[data-tl-zone]');
     if (!cell) return;
     els.manualZone.value = cell.dataset.tlZone;
     els.manualDate.value = els.timelineDate.value || todayYmd;
     els.manualStartTime.value = cell.dataset.tlHour;
+    syncManualDurationLimits();
     els.manualName.focus();
     showToast(`Horario ${cell.dataset.tlHour} precargado en el formulario.`);
   });
